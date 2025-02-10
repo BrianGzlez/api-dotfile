@@ -8,7 +8,7 @@ import io
 
 # API Configuration
 API_KEY = st.secrets["API_KEY"] if "API_KEY" in st.secrets else "dotkey.m8sQPi2Qy5Q2bpmwgg_Gm.cPQDV1HQoFV7fWDE2SJpEp"
-CERT_PATH = st.secrets["CERT_PATH"] if "CERT_PATH" in st.secrets else certifi.where()
+CERT_PATH = certifi.where()  # Usa los certificados de confianza del sistema
 
 # Allowed status values (based on API validation)
 STATUS_OPTIONS = ["approved", "rejected", "closed", "draft", "open"]
@@ -63,17 +63,13 @@ def update_case_status(df, selected_status):
                 results.append({"Case ID": case_id, "Status": status})
 
                 # Display notification with auto-disappear after 3s
-                if success:
-                    st.toast(f"✅ Case {case_id} updated successfully to {selected_status}", icon="🎉")
-                else:
-                    st.toast(f"❌ Case {case_id} failed: {status}", icon="⚠️")
-
-                time.sleep(3)  # Delay to allow the notification to disappear
+                notification_color = "green" if success else "red"
+                st.toast(f"✅ Case {case_id} updated successfully to {selected_status}" if success else f"❌ Case {case_id} failed: {status}",
+                         icon="🎉" if success else "⚠️", duration=3)
 
             except Exception as e:
                 results.append({"Case ID": case_id, "Status": "Failed", "Response": str(e)})
-                st.toast(f"❌ Case {case_id} encountered an error: {e}", icon="⚠️")
-                time.sleep(3)
+                st.toast(f"❌ Case {case_id} encountered an error: {e}", icon="⚠️", duration=3)
 
         progress_bar.progress((idx + 1) / total_cases)
 
@@ -115,19 +111,4 @@ if uploaded_file:
             with st.spinner(f"Updating cases to status: {selected_status}, please wait..."):
                 result_df = update_case_status(df, selected_status)
 
-            st.success(f"Processing completed. Cases updated to {selected_status}. 🎯")
-            st.dataframe(result_df, use_container_width=True)
-
-            # Convert results to CSV for download
-            output = io.BytesIO()
-            result_df.to_csv(output, index=False)
-            output.seek(0)
-
-            # Show download button
-            st.download_button(
-                label="Download Processed Results",
-                data=output,
-                file_name=f"case_results_{selected_status}.csv",
-                mime="text/csv",
-                use_container_width=True
-            )
+            st.success(f"Processing completed.
