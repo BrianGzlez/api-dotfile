@@ -8,7 +8,7 @@ import io
 
 # API Configuration
 API_KEY = "dotkey.m8sQPi2Qy5Q2bpmwgg_Gm.cPQDV1HQoFV7fWDE2SJpEp"
-CERT_PATH = certifi.where()  # Usa certificados de confianza del sistema
+CERT_PATH = certifi.where()  # Use default system certificates
 
 # Allowed status values (based on API validation)
 STATUS_OPTIONS = ["approved", "rejected", "closed", "draft", "open"]
@@ -62,15 +62,8 @@ def update_case_status(df, selected_status):
 
                 results.append({"Case ID": case_id, "Status": status})
 
-                # Display success or error messages
-                if success:
-                    st.success(f"✅ Case {case_id} updated successfully to {selected_status}")
-                else:
-                    st.error(f"❌ Case {case_id} failed: {status}")
-
             except Exception as e:
                 results.append({"Case ID": case_id, "Status": "Failed", "Response": str(e)})
-                st.error(f"❌ Case {case_id} encountered an error: {e}")
 
         progress_bar.progress((idx + 1) / total_cases)
 
