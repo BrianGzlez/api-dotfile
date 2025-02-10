@@ -6,11 +6,11 @@ import certifi
 from datetime import datetime, timezone
 import io
 
-# API Configuration (Directly in Code)
+# API Configuration
 API_KEY = "dotkey.m8sQPi2Qy5Q2bpmwgg_Gm.cPQDV1HQoFV7fWDE2SJpEp"
-CERT_PATH = certifi.where()  # Use system-trusted certificates
+CERT_PATH = certifi.where()  # Usa certificados de confianza del sistema
 
-# Allowed status values (Based on API validation)
+# Allowed status values (based on API validation)
 STATUS_OPTIONS = ["approved", "rejected", "closed", "draft", "open"]
 
 # Function to update case status
@@ -62,14 +62,15 @@ def update_case_status(df, selected_status):
 
                 results.append({"Case ID": case_id, "Status": status})
 
-                # Display notification with auto-disappear after 3s
-                notification_color = "green" if success else "red"
-                st.toast(f"✅ Case {case_id} updated successfully to {selected_status}" if success else f"❌ Case {case_id} failed: {status}",
-                         icon="🎉" if success else "⚠️", duration=3)
+                # Display success or error messages
+                if success:
+                    st.success(f"✅ Case {case_id} updated successfully to {selected_status}")
+                else:
+                    st.error(f"❌ Case {case_id} failed: {status}")
 
             except Exception as e:
                 results.append({"Case ID": case_id, "Status": "Failed", "Response": str(e)})
-                st.toast(f"❌ Case {case_id} encountered an error: {e}", icon="⚠️", duration=3)
+                st.error(f"❌ Case {case_id} encountered an error: {e}")
 
         progress_bar.progress((idx + 1) / total_cases)
 
