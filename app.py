@@ -6,11 +6,11 @@ import certifi
 from datetime import datetime, timezone
 import io
 
-# API Configuration
-API_KEY = st.secrets["API_KEY"] if "API_KEY" in st.secrets else "dotkey.m8sQPi2Qy5Q2bpmwgg_Gm.cPQDV1HQoFV7fWDE2SJpEp"
-CERT_PATH = certifi.where()  # Usa los certificados de confianza del sistema
+# API Configuration (Directly in Code)
+API_KEY = "dotkey.m8sQPi2Qy5Q2bpmwgg_Gm.cPQDV1HQoFV7fWDE2SJpEp"
+CERT_PATH = certifi.where()  # Use system-trusted certificates
 
-# Allowed status values (based on API validation)
+# Allowed status values (Based on API validation)
 STATUS_OPTIONS = ["approved", "rejected", "closed", "draft", "open"]
 
 # Function to update case status
@@ -111,4 +111,19 @@ if uploaded_file:
             with st.spinner(f"Updating cases to status: {selected_status}, please wait..."):
                 result_df = update_case_status(df, selected_status)
 
-            st.success(f"Processing completed.")
+            st.success(f"Processing completed. Cases updated to {selected_status}. 🎯")
+            st.dataframe(result_df, use_container_width=True)
+
+            # Convert results to CSV for download
+            output = io.BytesIO()
+            result_df.to_csv(output, index=False)
+            output.seek(0)
+
+            # Show download button
+            st.download_button(
+                label="Download Processed Results",
+                data=output,
+                file_name=f"case_results_{selected_status}.csv",
+                mime="text/csv",
+                use_container_width=True
+            )
