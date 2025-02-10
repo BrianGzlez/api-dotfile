@@ -111,4 +111,4 @@ if uploaded_file:
             with st.spinner(f"Updating cases to status: {selected_status}, please wait..."):
                 result_df = update_case_status(df, selected_status)
 
-            st.success(f"Processing completed.
+            st.success(f"Processing completed.")
