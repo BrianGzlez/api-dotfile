@@ -2,12 +2,13 @@ import streamlit as st
 import pandas as pd
 import requests
 import time
+import certifi
 from datetime import datetime, timezone
 import io
 
 # API Configuration
-API_KEY = "dotkey.m8sQPi2Qy5Q2bpmwgg_Gm.cPQDV1HQoFV7fWDE2SJpEp"
-CERT_PATH = "certi.pem"
+API_KEY = st.secrets["API_KEY"] if "API_KEY" in st.secrets else "dotkey.m8sQPi2Qy5Q2bpmwgg_Gm.cPQDV1HQoFV7fWDE2SJpEp"
+CERT_PATH = st.secrets["CERT_PATH"] if "CERT_PATH" in st.secrets else certifi.where()
 
 # Allowed status values (based on API validation)
 STATUS_OPTIONS = ["approved", "rejected", "closed", "draft", "open"]
@@ -105,7 +106,7 @@ if uploaded_file:
     if "case_id" not in df.columns:
         st.error("The uploaded file must contain a 'case_id' column.")
     else:
-        st.success("File uploaded successfully.")
+        st.success("File uploaded successfully. ✅")
 
         # Dropdown to select status
         selected_status = st.selectbox("Select the new case status:", STATUS_OPTIONS, index=0)
@@ -114,7 +115,7 @@ if uploaded_file:
             with st.spinner(f"Updating cases to status: {selected_status}, please wait..."):
                 result_df = update_case_status(df, selected_status)
 
-            st.success(f"Processing completed. Cases updated to {selected_status}.")
+            st.success(f"Processing completed. Cases updated to {selected_status}. 🎯")
             st.dataframe(result_df, use_container_width=True)
 
             # Convert results to CSV for download
