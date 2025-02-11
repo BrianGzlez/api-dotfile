@@ -4,12 +4,15 @@ import requests
 import time
 from datetime import datetime, timezone
 import io
+import certifi
+
+
 
 # API Keys for Different Environments
 STAGING_API_KEY = "dotkey.m8sQPi2Qy5Q2bpmwgg_Gm.cPQDV1HQoFV7fWDE2SJpEp"
 PRODUCTION_API_KEY = "dotkey.07B-0lDHMLl-1gWaVcwGS.pt17cpqXQMuqQ9o9vwVvcH"
 
-CERT_PATH = "certi.pem"
+CERT_PATH = certifi.where()
 
 # Allowed status values (based on API validation)
 STATUS_OPTIONS = ["approved", "rejected", "closed", "draft", "open"]
