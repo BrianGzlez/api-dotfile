@@ -2,16 +2,41 @@ import streamlit as st
 import pandas as pd
 import requests
 import time
-import certifi
 from datetime import datetime, timezone
 import io
 
-# API Configuration
-API_KEY = "dotkey.m8sQPi2Qy5Q2bpmwgg_Gm.cPQDV1HQoFV7fWDE2SJpEp"
-CERT_PATH = certifi.where()  # Use default system certificates
+# API Keys for Different Environments
+STAGING_API_KEY = "dotkey.m8sQPi2Qy5Q2bpmwgg_Gm.cPQDV1HQoFV7fWDE2SJpEp"
+PRODUCTION_API_KEY = "dotkey.07B-0lDHMLl-1gWaVcwGS.pt17cpqXQMuqQ9o9vwVvcH"
+
+CERT_PATH = "certi.pem"
 
 # Allowed status values (based on API validation)
 STATUS_OPTIONS = ["approved", "rejected", "closed", "draft", "open"]
+
+# Streamlit UI - Minimalist & Professional
+st.set_page_config(page_title="Case Processor", page_icon="📄", layout="centered")
+
+st.markdown(
+    """
+    <style>
+        body { font-family: 'Arial', sans-serif; }
+        .title { text-align: center; font-size: 28px; font-weight: bold; color: #333; }
+        .subtitle { text-align: center; font-size: 18px; color: #666; margin-bottom: 30px; }
+        .stButton button { width: 100%; background-color: #2C3E50; color: white; border-radius: 5px; }
+        .stDownloadButton button { width: 100%; background-color: #1A5276; color: white; border-radius: 5px; }
+    </style>
+    <div class="title">Automated Case Processor</div>
+    <div class="subtitle">Upload a CSV file with <code>case_id</code> and choose the desired status.</div>
+    """,
+    unsafe_allow_html=True
+)
+
+# Toggle to switch between Staging & Production
+use_production = st.toggle("Use Production Environment", value=False)
+
+# Select API Key based on Environment
+API_KEY = PRODUCTION_API_KEY if use_production else STAGING_API_KEY
 
 # Function to update case status
 def update_case_status(df, selected_status):
@@ -62,31 +87,23 @@ def update_case_status(df, selected_status):
 
                 results.append({"Case ID": case_id, "Status": status})
 
+                # Display notification with auto-disappear after 3s
+                if success:
+                    st.toast(f"✅ Case {case_id} updated successfully to {selected_status}", icon="🎉")
+                else:
+                    st.toast(f"❌ Case {case_id} failed: {status}", icon="⚠️")
+
+                time.sleep(3)  # Delay to allow the notification to disappear
+
             except Exception as e:
                 results.append({"Case ID": case_id, "Status": "Failed", "Response": str(e)})
+                st.toast(f"❌ Case {case_id} encountered an error: {e}", icon="⚠️")
+                time.sleep(3)
 
         progress_bar.progress((idx + 1) / total_cases)
 
     progress_bar.empty()
     return pd.DataFrame(results)
-
-# Streamlit UI - Minimalist & Professional
-st.set_page_config(page_title="Case Processor", page_icon="📄", layout="centered")
-
-st.markdown(
-    """
-    <style>
-        body { font-family: 'Arial', sans-serif; }
-        .title { text-align: center; font-size: 28px; font-weight: bold; color: #333; }
-        .subtitle { text-align: center; font-size: 18px; color: #666; margin-bottom: 30px; }
-        .stButton button { width: 100%; background-color: #2C3E50; color: white; border-radius: 5px; }
-        .stDownloadButton button { width: 100%; background-color: #1A5276; color: white; border-radius: 5px; }
-    </style>
-    <div class="title">Automated Case Processor</div>
-    <div class="subtitle">Upload a CSV file with <code>case_id</code> and choose the desired status.</div>
-    """,
-    unsafe_allow_html=True
-)
 
 uploaded_file = st.file_uploader("Upload CSV File", type=["csv"])
 
@@ -96,16 +113,16 @@ if uploaded_file:
     if "case_id" not in df.columns:
         st.error("The uploaded file must contain a 'case_id' column.")
     else:
-        st.success("File uploaded successfully. ✅")
+        st.success("File uploaded successfully.")
 
         # Dropdown to select status
         selected_status = st.selectbox("Select the new case status:", STATUS_OPTIONS, index=0)
 
         if st.button("Process Cases"):
-            with st.spinner(f"Updating cases to status: {selected_status}, please wait..."):
+            with st.spinner(f"Updating cases to status: {selected_status} in {'Production' if use_production else 'Staging'}, please wait..."):
                 result_df = update_case_status(df, selected_status)
 
-            st.success(f"Processing completed. Cases updated to {selected_status}. 🎯")
+            st.success(f"Processing completed. Cases updated to {selected_status}.")
             st.dataframe(result_df, use_container_width=True)
 
             # Convert results to CSV for download
