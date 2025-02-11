@@ -4,6 +4,7 @@ import aiohttp
 import asyncio
 import certifi
 import io
+import ssl
 from datetime import datetime, timezone
 
 # 🔑 Cargar claves desde los secretos de Streamlit
@@ -28,8 +29,8 @@ if user_key != ACCESS_KEY:
 
 st.sidebar.success("✅ Access Granted")
 
-# Ruta del certificado para verificación SSL
-CERT_PATH = certifi.where()
+# Crear un contexto SSL válido
+SSL_CONTEXT = ssl.create_default_context(cafile=certifi.where())
 
 # Opciones de estado permitidas
 STATUS_OPTIONS = ["approved", "rejected", "closed", "draft", "open"]
@@ -58,12 +59,12 @@ async def update_case_status_async(session, case_id, selected_status):
                 "comment": "Closing the case as per review process",
                 "reviewed_at": reviewed_at
             }
-            async with session.post(url_review, json=review_payload, headers=headers, ssl=CERT_PATH) as response_review:
+            async with session.post(url_review, json=review_payload, headers=headers, ssl=SSL_CONTEXT) as response_review:
                 if response_review.status == 201:
                     # Paso 2: Cerrar el caso
                     url_close = f"https://api.dotfile.com/v1/cases/{case_id}"
                     close_payload = {"status": "closed"}
-                    async with session.patch(url_close, json=close_payload, headers=headers, ssl=CERT_PATH) as response_close:
+                    async with session.patch(url_close, json=close_payload, headers=headers, ssl=SSL_CONTEXT) as response_close:
                         return {"Case ID": case_id, "Status": "Success" if response_close.status == 200 else f"Error {response_close.status}"}
                 else:
                     return {"Case ID": case_id, "Status": f"Error {response_review.status} (Review Failed)"}
@@ -71,7 +72,7 @@ async def update_case_status_async(session, case_id, selected_status):
             # Actualización directa para otros estados
             url_patch = f"https://api.dotfile.com/v1/cases/{case_id}"
             payload = {"status": selected_status}
-            async with session.patch(url_patch, json=payload, headers=headers, ssl=CERT_PATH) as response:
+            async with session.patch(url_patch, json=payload, headers=headers, ssl=SSL_CONTEXT) as response:
                 return {"Case ID": case_id, "Status": "Success" if response.status == 200 else f"Error {response.status}"}
 
     except Exception as e:
