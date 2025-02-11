@@ -6,26 +6,6 @@ from datetime import datetime, timezone
 import io
 import certifi
 
-# 🔑 Password Protection (Add only authorized users)
-AUTHORIZED_USERS = {
-    "admin": "password123",  # Puedes cambiar esto por contraseñas más seguras
-    "brian": "securepass456",
-    "user1": "mypassword"
-}
-
-st.set_page_config(page_title="Case Processor", page_icon="📄", layout="centered")
-
-# 🌟 Password Authentication
-st.sidebar.title("🔒 Secure Access")
-username = st.sidebar.text_input("Username")
-password = st.sidebar.text_input("Password", type="password")
-
-if username in AUTHORIZED_USERS and password == AUTHORIZED_USERS[username]:
-    st.sidebar.success("✅ Access Granted")
-else:
-    st.sidebar.warning("❌ Incorrect Credentials")
-    st.stop()  # Bloquea el acceso si los credenciales son incorrectos
-    
 
 # API Keys for Different Environments
 STAGING_API_KEY = "dotkey.m8sQPi2Qy5Q2bpmwgg_Gm.cPQDV1HQoFV7fWDE2SJpEp"
