@@ -14,6 +14,10 @@ PRODUCTION_API_KEY = st.secrets["PRODUCTION_API_KEY"]
 # Configuración de la página
 st.set_page_config(page_title="Case Processor", page_icon="📄", layout="centered")
 
+# Título de la aplicación
+st.title("📄 Case Processor")
+st.write("Automate the status update of cases securely and efficiently.")
+
 # UI para ingresar clave de acceso
 st.sidebar.title("🔐 Secure Access")
 user_key = st.sidebar.text_input("Enter Access Key:", type="password")
@@ -94,24 +98,24 @@ def update_case_status(df, selected_status):
     return pd.DataFrame(results)
 
 # Interfaz en Streamlit
-uploaded_file = st.file_uploader("Upload CSV File", type=["csv"])
+uploaded_file = st.file_uploader("📂 Upload CSV File", type=["csv"])
 
 if uploaded_file:
     df = pd.read_csv(uploaded_file)
 
     if "case_id" not in df.columns:
-        st.error("The uploaded file must contain a 'case_id' column.")
+        st.error("⚠️ The uploaded file must contain a 'case_id' column.")
     else:
-        st.success("File uploaded successfully.")
+        st.success("✅ File uploaded successfully.")
 
         # Dropdown para seleccionar estado
-        selected_status = st.selectbox("Select the new case status:", STATUS_OPTIONS, index=0)
+        selected_status = st.selectbox("📝 Select the new case status:", STATUS_OPTIONS, index=0)
 
-        if st.button("Process Cases"):
+        if st.button("🚀 Process Cases"):
             with st.spinner(f"Updating cases to status: {selected_status} in {'Production' if use_production else 'Staging'}, please wait..."):
                 result_df = update_case_status(df, selected_status)
 
-            st.success(f"Processing completed. Cases updated to {selected_status}.")
+            st.success(f"✅ Processing completed. Cases updated to {selected_status}.")
             st.dataframe(result_df, use_container_width=True)
 
             # Convertir resultados a CSV para descarga
@@ -121,7 +125,7 @@ if uploaded_file:
 
             # Botón de descarga
             st.download_button(
-                label="Download Processed Results",
+                label="📥 Download Processed Results",
                 data=output,
                 file_name=f"case_results_{selected_status}.csv",
                 mime="text/csv",
