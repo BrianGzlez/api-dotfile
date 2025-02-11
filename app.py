@@ -75,7 +75,7 @@ async def update_case_status_async(session, case_id, selected_status):
                 return {"Case ID": case_id, "Status": "Success" if response.status == 200 else f"Error {response.status}"}
 
     except Exception as e:
-        return {"Case ID": case_id, "Status": "Failed", "Response": str(e)}"
+        return {"Case ID": case_id, "Status": "Failed", "Response": str(e)}
 
 # Función para ejecutar múltiples solicitudes en paralelo
 async def process_cases(df, selected_status):
