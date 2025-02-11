@@ -10,28 +10,32 @@ import certifi
 # Configuración de la página
 st.set_page_config(page_title="Case Processor", page_icon="📄", layout="centered")
 
-# Inyección de CSS personalizado
-st.markdown("""
+# Inyección de CSS para estilos personalizados
+st.markdown(
+    """
     <style>
-    /* Estilos generales del fondo */
-    body {
+    /* Estilos para la pantalla de login */
+    .login-container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
         background-color: #f0f2f6;
     }
-    /* Estilos del login */
-    .login-container {
+    .login-box {
         background-color: #ffffff;
         padding: 2rem;
-        max-width: 400px;
-        margin: 10% auto;
         border-radius: 10px;
-        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        width: 100%;
+        max-width: 400px;
         text-align: center;
     }
-    .login-container h2 {
-        color: #333;
+    .login-box h2 {
         margin-bottom: 1.5rem;
+        color: #333;
     }
-    input[type="password"] {
+    .login-box input[type="password"] {
         width: 100%;
         padding: 0.75rem;
         margin-bottom: 1rem;
@@ -39,69 +43,71 @@ st.markdown("""
         border-radius: 5px;
         font-size: 1rem;
     }
-    .login-button {
+    .login-box button {
         background-color: #4CAF50;
-        color: white;
+        color: #fff;
         border: none;
         padding: 0.75rem 1.5rem;
         border-radius: 5px;
         font-size: 1rem;
         cursor: pointer;
     }
-    .login-button:hover {
+    .login-box button:hover {
         background-color: #45a049;
     }
-    /* Estilos para el contenedor principal de la app */
+    /* Estilos para el contenedor principal */
     .main-container {
-        background: linear-gradient(135deg, #f5f7fa, #c3cfe2);
+        background: #f5f7fa;
         padding: 2rem;
-        border-radius: 15px;
-        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-        margin: 1rem;
+        border-radius: 10px;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        margin: 2rem auto;
+        max-width: 800px;
     }
     </style>
-    """, unsafe_allow_html=True)
+    """,
+    unsafe_allow_html=True,
+)
 
-# 🔑 Cargar claves desde las variables de entorno
+# Cargar claves desde variables de entorno
 ACCESS_KEY = os.getenv("ACCESS_KEY")
 STAGING_API_KEY = os.getenv("STAGING_API_KEY")
 PRODUCTION_API_KEY = os.getenv("PRODUCTION_API_KEY")
 
 if not all([ACCESS_KEY, STAGING_API_KEY, PRODUCTION_API_KEY]):
-    st.error("❌ API keys are missing. Please configure them in GitHub Secrets.")
+    st.error("❌ API keys are missing. Please configure them in your environment variables.")
     st.stop()
 
-# Control de estado del login con session_state
+# Usar session_state para controlar el login
 if "logged_in" not in st.session_state:
     st.session_state.logged_in = False
 
 # Si el usuario no está autenticado, se muestra la pantalla de login
 if not st.session_state.logged_in:
-    login_container = st.empty()  # Contenedor temporal para el login
-    with login_container.container():
-        st.markdown("<div class='login-container'>", unsafe_allow_html=True)
-        st.markdown("<h2>Acceso Seguro</h2>", unsafe_allow_html=True)
-        st.write("Por favor, ingrese su clave de acceso")
-        user_key = st.text_input("", type="password", placeholder="Clave de acceso")
-        if st.button("Ingresar", key="login_button"):
-            if user_key == ACCESS_KEY:
-                st.session_state.logged_in = True
-                st.success("✅ Acceso concedido")
-                st.experimental_rerun()
-            else:
-                st.error("❌ Clave incorrecta. Intente de nuevo.")
-        st.markdown("</div>", unsafe_allow_html=True)
+    st.markdown('<div class="login-container">', unsafe_allow_html=True)
+    st.markdown('<div class="login-box">', unsafe_allow_html=True)
+    st.markdown("<h2>Acceso Seguro</h2>", unsafe_allow_html=True)
+    st.write("Ingrese su clave de acceso para continuar")
+    user_key = st.text_input("", type="password", placeholder="Clave de acceso")
+    if st.button("Ingresar"):
+        if user_key == ACCESS_KEY:
+            st.session_state.logged_in = True
+            st.success("✅ Acceso concedido")
+            st.experimental_rerun()
+        else:
+            st.error("❌ Clave incorrecta. Intente de nuevo.")
+    st.markdown("</div></div>", unsafe_allow_html=True)
     st.stop()
 
-# Una vez autenticado, ocultamos el sidebar para una interfaz más limpia
-hide_sidebar_style = """
+# Ocultar el sidebar para una interfaz más limpia una vez autenticado
+st.markdown(
+    """
     <style>
-    [data-testid="stSidebar"] {
-        display: none;
-    }
+    [data-testid="stSidebar"] { display: none; }
     </style>
-"""
-st.markdown(hide_sidebar_style, unsafe_allow_html=True)
+    """,
+    unsafe_allow_html=True,
+)
 
 # Ruta del certificado para verificación SSL
 CERT_PATH = certifi.where()
@@ -109,21 +115,21 @@ CERT_PATH = certifi.where()
 # Opciones de estado permitidas
 STATUS_OPTIONS = ["approved", "rejected", "closed", "draft", "open"]
 
-# Toggle para seleccionar entorno (ahora se muestra en el área principal)
+# Toggle para seleccionar entorno (producción vs staging)
 use_production = st.toggle("Use Production Environment", value=False)
 API_KEY = PRODUCTION_API_KEY if use_production else STAGING_API_KEY
 
-# Función para actualizar el estado de los casos
 def update_case_status(df, selected_status):
     headers = {
         "accept": "application/json",
         "content-type": "application/json",
-        "X-DOTFILE-API-KEY": API_KEY
+        "X-DOTFILE-API-KEY": API_KEY,
     }
     reviewed_at = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3] + "Z"
     results = []
     progress_bar = st.progress(0)
     total_cases = len(df)
+    
     for idx, row in df.iterrows():
         case_id = row.get("case_id")
         if pd.notna(case_id):
@@ -134,9 +140,10 @@ def update_case_status(df, selected_status):
                     review_payload = {
                         "status": "closed",
                         "comment": "Closing the case as per review process",
-                        "reviewed_at": reviewed_at
+                        "reviewed_at": reviewed_at,
                     }
                     response_review = requests.post(url_review, json=review_payload, headers=headers, verify=CERT_PATH)
+                    
                     if response_review.status_code == 201:
                         # Paso 2: Cerrar el caso
                         time.sleep(2)
@@ -163,31 +170,31 @@ def update_case_status(df, selected_status):
     return pd.DataFrame(results)
 
 # Interfaz principal de la aplicación
-with st.container():
-    st.markdown("<div class='main-container'>", unsafe_allow_html=True)
-    st.title("Case Processor")
-    
-    uploaded_file = st.file_uploader("Upload CSV File", type=["csv"])
-    if uploaded_file:
-        df = pd.read_csv(uploaded_file)
-        if "case_id" not in df.columns:
-            st.error("The uploaded file must contain a 'case_id' column.")
-        else:
-            st.success("File uploaded successfully.")
-            selected_status = st.selectbox("Select the new case status:", STATUS_OPTIONS, index=0)
-            if st.button("Process Cases"):
-                with st.spinner(f"Updating cases to status: {selected_status} in {'Production' if use_production else 'Staging'}, please wait..."):
-                    result_df = update_case_status(df, selected_status)
-                st.success(f"Processing completed. Cases updated to {selected_status}.")
-                st.dataframe(result_df, use_container_width=True)
-                # Preparar CSV para descarga
-                output = io.BytesIO()
-                result_df.to_csv(output, index=False)
-                output.seek(0)
-                st.download_button(
-                    label="Download Processed Results",
-                    data=output,
-                    file_name=f"case_results_{selected_status}.csv",
-                    mime="text/csv"
-                )
-    st.markdown("</div>", unsafe_allow_html=True)
+st.markdown('<div class="main-container">', unsafe_allow_html=True)
+st.title("Case Processor")
+
+uploaded_file = st.file_uploader("Upload CSV File", type=["csv"])
+if uploaded_file:
+    df = pd.read_csv(uploaded_file)
+    if "case_id" not in df.columns:
+        st.error("El archivo debe contener una columna 'case_id'.")
+    else:
+        st.success("Archivo cargado correctamente.")
+        selected_status = st.selectbox("Seleccione el nuevo estado del caso:", STATUS_OPTIONS, index=0)
+        if st.button("Procesar casos"):
+            with st.spinner(f"Actualizando casos a '{selected_status}' en {'Producción' if use_production else 'Staging'}..."):
+                result_df = update_case_status(df, selected_status)
+            st.success(f"Procesamiento completado. Casos actualizados a {selected_status}.")
+            st.dataframe(result_df, use_container_width=True)
+            
+            # Preparar CSV para descarga
+            output = io.BytesIO()
+            result_df.to_csv(output, index=False)
+            output.seek(0)
+            st.download_button(
+                label="Descargar resultados",
+                data=output,
+                file_name=f"case_results_{selected_status}.csv",
+                mime="text/csv"
+            )
+st.markdown("</div>", unsafe_allow_html=True)
