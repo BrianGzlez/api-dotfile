@@ -7,6 +7,22 @@ import io
 import certifi
 
 
+
+# 🔑 Cargar clave desde Streamlit Secrets
+ACCESS_KEY = st.secrets["auth"]["access_key"]
+
+# UI para ingresar clave de acceso
+st.set_page_config(page_title="Case Processor", page_icon="📄", layout="centered")
+
+st.sidebar.title("🔐 Secure Access")
+user_key = st.sidebar.text_input("Enter Access Key:", type="password")
+
+if user_key != ACCESS_KEY:
+    st.sidebar.warning("❌ Incorrect Key")
+    st.stop()
+
+st.sidebar.success("✅ Access Granted")
+
 # API Keys for Different Environments
 STAGING_API_KEY = "dotkey.m8sQPi2Qy5Q2bpmwgg_Gm.cPQDV1HQoFV7fWDE2SJpEp"
 PRODUCTION_API_KEY = "dotkey.07B-0lDHMLl-1gWaVcwGS.pt17cpqXQMuqQ9o9vwVvcH"
@@ -16,25 +32,7 @@ CERT_PATH = certifi.where()
 # Allowed status values (based on API validation)
 STATUS_OPTIONS = ["approved", "rejected", "closed", "draft", "open"]
 
-# Streamlit UI - Minimalist & Professional
-st.set_page_config(page_title="Case Processor", page_icon="📄", layout="centered")
-
-st.markdown(
-    """
-    <style>
-        body { font-family: 'Arial', sans-serif; }
-        .title { text-align: center; font-size: 28px; font-weight: bold; color: #333; }
-        .subtitle { text-align: center; font-size: 18px; color: #666; margin-bottom: 30px; }
-        .stButton button { width: 100%; background-color: #2C3E50; color: white; border-radius: 5px; }
-        .stDownloadButton button { width: 100%; background-color: #1A5276; color: white; border-radius: 5px; }
-    </style>
-    <div class="title">Automated Case Processor</div>
-    <div class="subtitle">Upload a CSV file with <code>case_id</code> and choose the desired status.</div>
-    """,
-    unsafe_allow_html=True
-)
-
-# Toggle to switch between Staging & Production
+# Toggle for Staging/Production
 use_production = st.toggle("Use Production Environment", value=False)
 
 # Select API Key based on Environment
@@ -69,7 +67,7 @@ def update_case_status(df, selected_status):
 
                     if response_review.status_code == 201:
                         # Step 2: Close the Case
-                        time.sleep(2)  # Prevents race conditions
+                        time.sleep(2)
                         url_close = f"https://api.dotfile.com/v1/cases/{case_id}"
                         close_payload = {"status": "closed"}
                         response_close = requests.patch(url_close, json=close_payload, headers=headers, verify=CERT_PATH)
@@ -89,24 +87,15 @@ def update_case_status(df, selected_status):
 
                 results.append({"Case ID": case_id, "Status": status})
 
-                # Display notification with auto-disappear after 3s
-                if success:
-                    st.toast(f"✅ Case {case_id} updated successfully to {selected_status}", icon="🎉")
-                else:
-                    st.toast(f"❌ Case {case_id} failed: {status}", icon="⚠️")
-
-                time.sleep(3)  # Delay to allow the notification to disappear
-
             except Exception as e:
                 results.append({"Case ID": case_id, "Status": "Failed", "Response": str(e)})
-                st.toast(f"❌ Case {case_id} encountered an error: {e}", icon="⚠️")
-                time.sleep(3)
 
         progress_bar.progress((idx + 1) / total_cases)
 
     progress_bar.empty()
     return pd.DataFrame(results)
 
+# Streamlit UI
 uploaded_file = st.file_uploader("Upload CSV File", type=["csv"])
 
 if uploaded_file:
@@ -140,3 +129,4 @@ if uploaded_file:
                 mime="text/csv",
                 use_container_width=True
             )
+
