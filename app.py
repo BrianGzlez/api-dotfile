@@ -9,7 +9,7 @@ import certifi
 
 
 # 🔑 Cargar clave desde Streamlit Secrets
-ACCESS_KEY = st.secrets["auth"]["access_key"]
+ACCESS_KEY = "1234"
 
 # UI para ingresar clave de acceso
 st.set_page_config(page_title="Case Processor", page_icon="📄", layout="centered")
