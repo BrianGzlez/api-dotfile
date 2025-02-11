@@ -7,9 +7,10 @@ import io
 import certifi
 
 
-
-# 🔑 Cargar clave desde Streamlit Secrets
-ACCESS_KEY = "1234"
+# 🔑 Cargar claves desde los secretos de GitHub
+ACCESS_KEY = os.getenv("ACCESS_KEY")
+STAGING_API_KEY = os.getenv("STAGING_API_KEY")
+PRODUCTION_API_KEY = os.getenv("PRODUCTION_API_KEY")
 
 # UI para ingresar clave de acceso
 st.set_page_config(page_title="Case Processor", page_icon="📄", layout="centered")
@@ -23,19 +24,15 @@ if user_key != ACCESS_KEY:
 
 st.sidebar.success("✅ Access Granted")
 
-# API Keys for Different Environments
-STAGING_API_KEY = "dotkey.m8sQPi2Qy5Q2bpmwgg_Gm.cPQDV1HQoFV7fWDE2SJpEp"
-PRODUCTION_API_KEY = "dotkey.07B-0lDHMLl-1gWaVcwGS.pt17cpqXQMuqQ9o9vwVvcH"
-
 CERT_PATH = certifi.where()
 
 # Allowed status values (based on API validation)
 STATUS_OPTIONS = ["approved", "rejected", "closed", "draft", "open"]
 
-# Toggle for Staging/Production
+# Toggle para seleccionar entorno
 use_production = st.toggle("Use Production Environment", value=False)
 
-# Select API Key based on Environment
+# Seleccionar API Key basada en el entorno
 API_KEY = PRODUCTION_API_KEY if use_production else STAGING_API_KEY
 
 # Function to update case status
