@@ -1,10 +1,10 @@
 import streamlit as st
 import pandas as pd
-import requests
-import time
-from datetime import datetime, timezone
-import io
+import aiohttp
+import asyncio
 import certifi
+import io
+from datetime import datetime, timezone
 
 # 🔑 Cargar claves desde los secretos de Streamlit
 ACCESS_KEY = st.secrets["ACCESS_KEY"]
@@ -40,61 +40,48 @@ use_production = st.toggle("Use Production Environment", value=False)
 # Seleccionar API Key basada en el entorno
 API_KEY = PRODUCTION_API_KEY if use_production else STAGING_API_KEY
 
-# Función para actualizar el estado de los casos
-def update_case_status(df, selected_status):
+# Función para realizar la actualización del estado de los casos de forma asíncrona
+async def update_case_status_async(session, case_id, selected_status):
     headers = {
         "accept": "application/json",
         "content-type": "application/json",
         "X-DOTFILE-API-KEY": API_KEY
     }
-
     reviewed_at = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3] + "Z"
-    results = []
-    progress_bar = st.progress(0)
-    total_cases = len(df)
-
-    for idx, row in df.iterrows():
-        case_id = row.get("case_id")
-        if pd.notna(case_id):
-            try:
-                if selected_status == "closed":
-                    # Paso 1: Crear revisión
-                    url_review = f"https://api.dotfile.com/v1/cases/{case_id}/reviews"
-                    review_payload = {
-                        "status": "closed",
-                        "comment": "Closing the case as per review process",
-                        "reviewed_at": reviewed_at
-                    }
-                    response_review = requests.post(url_review, json=review_payload, headers=headers, verify=CERT_PATH)
-
-                    if response_review.status_code == 201:
-                        # Paso 2: Cerrar el caso
-                        time.sleep(2)
-                        url_close = f"https://api.dotfile.com/v1/cases/{case_id}"
-                        close_payload = {"status": "closed"}
-                        response_close = requests.patch(url_close, json=close_payload, headers=headers, verify=CERT_PATH)
-                        success = response_close.status_code == 200
-                        status = "Success" if success else f"Error {response_close.status_code}"
-                    else:
-                        success = False
-                        status = f"Error {response_review.status_code} (Review Failed)"
-
+    
+    try:
+        if selected_status == "closed":
+            # Paso 1: Crear revisión
+            url_review = f"https://api.dotfile.com/v1/cases/{case_id}/reviews"
+            review_payload = {
+                "status": "closed",
+                "comment": "Closing the case as per review process",
+                "reviewed_at": reviewed_at
+            }
+            async with session.post(url_review, json=review_payload, headers=headers, ssl=CERT_PATH) as response_review:
+                if response_review.status == 201:
+                    # Paso 2: Cerrar el caso
+                    url_close = f"https://api.dotfile.com/v1/cases/{case_id}"
+                    close_payload = {"status": "closed"}
+                    async with session.patch(url_close, json=close_payload, headers=headers, ssl=CERT_PATH) as response_close:
+                        return {"Case ID": case_id, "Status": "Success" if response_close.status == 200 else f"Error {response_close.status}"}
                 else:
-                    # Actualización directa para otros estados
-                    url_patch = f"https://api.dotfile.com/v1/cases/{case_id}"
-                    payload = {"status": selected_status}
-                    response = requests.patch(url_patch, json=payload, headers=headers, verify=CERT_PATH)
-                    success = response.status_code == 200
-                    status = "Success" if success else f"Error {response.status_code}"
+                    return {"Case ID": case_id, "Status": f"Error {response_review.status} (Review Failed)"}
+        else:
+            # Actualización directa para otros estados
+            url_patch = f"https://api.dotfile.com/v1/cases/{case_id}"
+            payload = {"status": selected_status}
+            async with session.patch(url_patch, json=payload, headers=headers, ssl=CERT_PATH) as response:
+                return {"Case ID": case_id, "Status": "Success" if response.status == 200 else f"Error {response.status}"}
 
-                results.append({"Case ID": case_id, "Status": status})
+    except Exception as e:
+        return {"Case ID": case_id, "Status": "Failed", "Response": str(e)}"
 
-            except Exception as e:
-                results.append({"Case ID": case_id, "Status": "Failed", "Response": str(e)})
-
-        progress_bar.progress((idx + 1) / total_cases)
-
-    progress_bar.empty()
+# Función para ejecutar múltiples solicitudes en paralelo
+async def process_cases(df, selected_status):
+    async with aiohttp.ClientSession() as session:
+        tasks = [update_case_status_async(session, row["case_id"], selected_status) for _, row in df.iterrows() if pd.notna(row["case_id"])]
+        results = await asyncio.gather(*tasks)
     return pd.DataFrame(results)
 
 # Interfaz en Streamlit
@@ -113,7 +100,7 @@ if uploaded_file:
 
         if st.button("🚀 Process Cases"):
             with st.spinner(f"Updating cases to status: {selected_status} in {'Production' if use_production else 'Staging'}, please wait..."):
-                result_df = update_case_status(df, selected_status)
+                result_df = asyncio.run(process_cases(df, selected_status))
 
             st.success(f"✅ Processing completed. Cases updated to {selected_status}.")
             st.dataframe(result_df, use_container_width=True)
