@@ -10,72 +10,72 @@ import certifi
 # Configuración de la página
 st.set_page_config(page_title="Case Processor", page_icon="📄", layout="centered")
 
-# Inyección de CSS personalizado para el login y la interfaz principal
+# Inyección de CSS para estilos personalizados (login y contenedor principal)
 st.markdown("""
 <style>
 /* Fondo general */
 body {
-    background-color: #f0f2f6;
+  background-color: #f0f2f6;
 }
 
-/* Contenedor del login: centra vertical y horizontalmente */
+/* Contenedor para centrar la pantalla de login */
 .login-container {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 90vh;
 }
 
 /* Caja del login */
 .login-box {
-    background-color: #ffffff;
-    padding: 2rem;
-    border-radius: 8px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-    max-width: 400px;
-    width: 90%;
-    text-align: center;
+  background-color: #ffffff;
+  padding: 2rem;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  width: 100%;
+  max-width: 400px;
+  text-align: center;
 }
 
 /* Título del login */
 .login-box h2 {
-    margin-bottom: 1rem;
-    color: #333333;
+  margin-bottom: 1rem;
+  color: #333;
 }
 
 /* Input de contraseña */
 .login-box input[type="password"] {
-    width: 100%;
-    padding: 0.75rem;
-    margin-bottom: 1rem;
-    border: 1px solid #cccccc;
-    border-radius: 4px;
-    font-size: 1rem;
+  width: 100%;
+  padding: 0.75rem;
+  margin-bottom: 1rem;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-size: 1rem;
 }
 
 /* Botón del login */
 .login-box button {
-    background-color: #007bff;
-    color: #ffffff;
-    border: none;
-    padding: 0.75rem 1.5rem;
-    border-radius: 4px;
-    cursor: pointer;
-    font-size: 1rem;
+  background-color: #007bff;
+  color: #fff;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 1rem;
 }
 
 .login-box button:hover {
-    background-color: #0056b3;
+  background-color: #0056b3;
 }
 
 /* Contenedor principal de la app */
 .main-container {
-    background-color: #ffffff;
-    padding: 2rem;
-    border-radius: 8px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-    margin: 2rem auto;
-    max-width: 800px;
+  background-color: #fff;
+  padding: 2rem;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  margin: 2rem auto;
+  max-width: 800px;
 }
 </style>
 """, unsafe_allow_html=True)
@@ -86,36 +86,36 @@ STAGING_API_KEY = os.getenv("STAGING_API_KEY")
 PRODUCTION_API_KEY = os.getenv("PRODUCTION_API_KEY")
 
 if not all([ACCESS_KEY, STAGING_API_KEY, PRODUCTION_API_KEY]):
-    st.error("❌ API keys are missing. Please configure them in your environment variables.")
+    st.error("❌ Faltan API keys. Configure las variables de entorno correctamente.")
     st.stop()
 
-# Control del estado de login mediante session_state
+# Control de estado del login mediante session_state
 if "logged_in" not in st.session_state:
     st.session_state.logged_in = False
 
-# Si el usuario no está autenticado, mostramos la pantalla de login
+# Si el usuario NO está autenticado, mostrar pantalla de login
 if not st.session_state.logged_in:
     st.markdown('<div class="login-container">', unsafe_allow_html=True)
     st.markdown('<div class="login-box">', unsafe_allow_html=True)
     st.markdown("<h2>Acceso Seguro</h2>", unsafe_allow_html=True)
     st.write("Ingrese su clave de acceso para continuar")
     user_key = st.text_input("", type="password", placeholder="Clave de acceso")
+    # Usamos un botón para ingresar
     if st.button("Ingresar"):
         if user_key == ACCESS_KEY:
             st.session_state.logged_in = True
-            st.success("✅ Acceso concedido")
             st.experimental_rerun()
         else:
             st.error("❌ Clave incorrecta. Intente de nuevo.")
     st.markdown("</div></div>", unsafe_allow_html=True)
     st.stop()
 
-# Una vez autenticado, ocultamos el sidebar para una interfaz más limpia
+# Ocultar el sidebar para una interfaz más limpia
 st.markdown("""
-    <style>
-    [data-testid="stSidebar"] {display: none;}
-    </style>
-    """, unsafe_allow_html=True)
+<style>
+[data-testid="stSidebar"] {display: none;}
+</style>
+""", unsafe_allow_html=True)
 
 # Ruta del certificado para verificación SSL
 CERT_PATH = certifi.where()
@@ -161,7 +161,6 @@ def update_case_status(df, selected_status):
                         success = response_close.status_code == 200
                         status = "Success" if success else f"Error {response_close.status_code}"
                     else:
-                        success = False
                         status = f"Error {response_review.status_code} (Review Failed)"
                 else:
                     # Actualización directa para otros estados
