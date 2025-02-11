@@ -10,64 +10,75 @@ import certifi
 # Configuración de la página
 st.set_page_config(page_title="Case Processor", page_icon="📄", layout="centered")
 
-# Inyección de CSS para estilos personalizados
-st.markdown(
-    """
-    <style>
-    /* Estilos para la pantalla de login */
-    .login-container {
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        height: 100vh;
-        background-color: #f0f2f6;
-    }
-    .login-box {
-        background-color: #ffffff;
-        padding: 2rem;
-        border-radius: 10px;
-        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-        width: 100%;
-        max-width: 400px;
-        text-align: center;
-    }
-    .login-box h2 {
-        margin-bottom: 1.5rem;
-        color: #333;
-    }
-    .login-box input[type="password"] {
-        width: 100%;
-        padding: 0.75rem;
-        margin-bottom: 1rem;
-        border: 1px solid #ccc;
-        border-radius: 5px;
-        font-size: 1rem;
-    }
-    .login-box button {
-        background-color: #4CAF50;
-        color: #fff;
-        border: none;
-        padding: 0.75rem 1.5rem;
-        border-radius: 5px;
-        font-size: 1rem;
-        cursor: pointer;
-    }
-    .login-box button:hover {
-        background-color: #45a049;
-    }
-    /* Estilos para el contenedor principal */
-    .main-container {
-        background: #f5f7fa;
-        padding: 2rem;
-        border-radius: 10px;
-        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-        margin: 2rem auto;
-        max-width: 800px;
-    }
-    </style>
-    """,
-    unsafe_allow_html=True,
-)
+# Inyección de CSS personalizado para el login y la interfaz principal
+st.markdown("""
+<style>
+/* Fondo general */
+body {
+    background-color: #f0f2f6;
+}
+
+/* Contenedor del login: centra vertical y horizontalmente */
+.login-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+}
+
+/* Caja del login */
+.login-box {
+    background-color: #ffffff;
+    padding: 2rem;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    max-width: 400px;
+    width: 90%;
+    text-align: center;
+}
+
+/* Título del login */
+.login-box h2 {
+    margin-bottom: 1rem;
+    color: #333333;
+}
+
+/* Input de contraseña */
+.login-box input[type="password"] {
+    width: 100%;
+    padding: 0.75rem;
+    margin-bottom: 1rem;
+    border: 1px solid #cccccc;
+    border-radius: 4px;
+    font-size: 1rem;
+}
+
+/* Botón del login */
+.login-box button {
+    background-color: #007bff;
+    color: #ffffff;
+    border: none;
+    padding: 0.75rem 1.5rem;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 1rem;
+}
+
+.login-box button:hover {
+    background-color: #0056b3;
+}
+
+/* Contenedor principal de la app */
+.main-container {
+    background-color: #ffffff;
+    padding: 2rem;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    margin: 2rem auto;
+    max-width: 800px;
+}
+</style>
+""", unsafe_allow_html=True)
 
 # Cargar claves desde variables de entorno
 ACCESS_KEY = os.getenv("ACCESS_KEY")
@@ -78,11 +89,11 @@ if not all([ACCESS_KEY, STAGING_API_KEY, PRODUCTION_API_KEY]):
     st.error("❌ API keys are missing. Please configure them in your environment variables.")
     st.stop()
 
-# Usar session_state para controlar el login
+# Control del estado de login mediante session_state
 if "logged_in" not in st.session_state:
     st.session_state.logged_in = False
 
-# Si el usuario no está autenticado, se muestra la pantalla de login
+# Si el usuario no está autenticado, mostramos la pantalla de login
 if not st.session_state.logged_in:
     st.markdown('<div class="login-container">', unsafe_allow_html=True)
     st.markdown('<div class="login-box">', unsafe_allow_html=True)
@@ -99,15 +110,12 @@ if not st.session_state.logged_in:
     st.markdown("</div></div>", unsafe_allow_html=True)
     st.stop()
 
-# Ocultar el sidebar para una interfaz más limpia una vez autenticado
-st.markdown(
-    """
+# Una vez autenticado, ocultamos el sidebar para una interfaz más limpia
+st.markdown("""
     <style>
-    [data-testid="stSidebar"] { display: none; }
+    [data-testid="stSidebar"] {display: none;}
     </style>
-    """,
-    unsafe_allow_html=True,
-)
+    """, unsafe_allow_html=True)
 
 # Ruta del certificado para verificación SSL
 CERT_PATH = certifi.where()
@@ -115,7 +123,7 @@ CERT_PATH = certifi.where()
 # Opciones de estado permitidas
 STATUS_OPTIONS = ["approved", "rejected", "closed", "draft", "open"]
 
-# Toggle para seleccionar entorno (producción vs staging)
+# Toggle para seleccionar entorno (Staging o Producción)
 use_production = st.toggle("Use Production Environment", value=False)
 API_KEY = PRODUCTION_API_KEY if use_production else STAGING_API_KEY
 
@@ -170,31 +178,32 @@ def update_case_status(df, selected_status):
     return pd.DataFrame(results)
 
 # Interfaz principal de la aplicación
-st.markdown('<div class="main-container">', unsafe_allow_html=True)
-st.title("Case Processor")
-
-uploaded_file = st.file_uploader("Upload CSV File", type=["csv"])
-if uploaded_file:
-    df = pd.read_csv(uploaded_file)
-    if "case_id" not in df.columns:
-        st.error("El archivo debe contener una columna 'case_id'.")
-    else:
-        st.success("Archivo cargado correctamente.")
-        selected_status = st.selectbox("Seleccione el nuevo estado del caso:", STATUS_OPTIONS, index=0)
-        if st.button("Procesar casos"):
-            with st.spinner(f"Actualizando casos a '{selected_status}' en {'Producción' if use_production else 'Staging'}..."):
-                result_df = update_case_status(df, selected_status)
-            st.success(f"Procesamiento completado. Casos actualizados a {selected_status}.")
-            st.dataframe(result_df, use_container_width=True)
-            
-            # Preparar CSV para descarga
-            output = io.BytesIO()
-            result_df.to_csv(output, index=False)
-            output.seek(0)
-            st.download_button(
-                label="Descargar resultados",
-                data=output,
-                file_name=f"case_results_{selected_status}.csv",
-                mime="text/csv"
-            )
-st.markdown("</div>", unsafe_allow_html=True)
+with st.container():
+    st.markdown('<div class="main-container">', unsafe_allow_html=True)
+    st.title("Case Processor")
+    
+    uploaded_file = st.file_uploader("Upload CSV File", type=["csv"])
+    if uploaded_file:
+        df = pd.read_csv(uploaded_file)
+        if "case_id" not in df.columns:
+            st.error("El archivo debe contener una columna 'case_id'.")
+        else:
+            st.success("Archivo cargado correctamente.")
+            selected_status = st.selectbox("Seleccione el nuevo estado del caso:", STATUS_OPTIONS, index=0)
+            if st.button("Procesar casos"):
+                with st.spinner(f"Actualizando casos a '{selected_status}' en {'Producción' if use_production else 'Staging'}..."):
+                    result_df = update_case_status(df, selected_status)
+                st.success(f"Procesamiento completado. Casos actualizados a {selected_status}.")
+                st.dataframe(result_df, use_container_width=True)
+                
+                # Preparar CSV para descarga
+                output = io.BytesIO()
+                result_df.to_csv(output, index=False)
+                output.seek(0)
+                st.download_button(
+                    label="Descargar resultados",
+                    data=output,
+                    file_name=f"case_results_{selected_status}.csv",
+                    mime="text/csv"
+                )
+    st.markdown("</div>", unsafe_allow_html=True)
