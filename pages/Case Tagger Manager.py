@@ -6,8 +6,8 @@ import io
 import ssl
 
 # 🔑 Claves API
-STAGING_API_KEY = "dotkey.m8sQPi2Qy5Q2bpmwgg_Gm.cPQDV1HQoFV7fWDE2SJpEp"
-PRODUCTION_API_KEY = "dotkey.07B-0lDHMLl-1gWaVcwGS.pt17cpqXQMuqQ9o9vwVvcH"
+STAGING_API_KEY = st.secrets["STAGING_API_KEY"]
+PRODUCTION_API_KEY = st.secrets["PRODUCTION_API_KEY"]
 
 # 📌 Ruta del certificado SSL (modifícala según donde guardaste `certi.pem`)
 CERT_PATH = "pages/certi.pem"
