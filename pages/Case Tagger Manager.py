@@ -13,7 +13,7 @@ PRODUCTION_API_KEY = st.secrets["PRODUCTION_API_KEY"]
 CERT_PATH = "pages/certi.pem"
 
 # 📌 Crear un contexto SSL con `certi.pem`
-SSL_CONTEXT = ssl.create_default_context(cafile=CERT_PATH)
+SSL_CONTEXT = ssl.create_default_context()
 
 # 📌 Configuración de la página
 st.set_page_config(page_title="Case Tagger System", page_icon="📂", layout="centered")
