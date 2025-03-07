@@ -8,9 +8,6 @@ textColor="#ffffff"
 headless = true
 runOnSave = true
 
-[client]
-showErrorDetails = true
-displayEnabled = true
 
 [ui]
 layout="wide"  # Activa el modo Wide siempre
