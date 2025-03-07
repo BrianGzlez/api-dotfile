@@ -11,7 +11,6 @@ runOnSave = true
 [client]
 toolbarMode = "minimal"
 showErrorDetails = true
-caching = true
 displayEnabled = true
 
 [ui]
