@@ -7,8 +7,6 @@ import os
 st.set_page_config(page_title="Arkham Exchange - Dotfile", layout="wide")
 os.environ["STREAMLIT_CONFIG"] = "./.streamlit/config.toml"
 
-st.write("Available secrets:", list(st.secrets.keys()))
-
 # Estilos personalizados de Streamlit
 st.markdown(
     """
