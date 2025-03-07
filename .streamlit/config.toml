@@ -1,0 +1,18 @@
+[theme]
+primaryColor="#698dea"
+backgroundColor="#000000"
+secondaryBackgroundColor="#000000"
+textColor="#ffffff"
+
+[server]
+headless = true
+runOnSave = true
+
+[client]
+toolbarMode = "minimal"
+showErrorDetails = true
+caching = true
+displayEnabled = true
+
+[ui]
+layout="wide"  # Activa el modo Wide siempre
