@@ -34,7 +34,7 @@ API_KEY = PRODUCTION_API_KEY if use_production else STAGING_API_KEY
 
 # 📌 Validar la existencia de certi.pem en la misma carpeta
 current_dir = os.path.dirname(os.path.abspath(__file__))
-CERT_PATH = "pages/certi.pem"
+cert_path = "pages/certi.pem"
 
 if not os.path.isfile(cert_path):
     st.error("❌ 'certi.pem' file not found in the project directory. Please ensure it's present.")
