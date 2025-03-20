@@ -8,8 +8,8 @@ import requests
 import os
 
 # 🔑 Claves API
-STAGING_API_KEY = st.secrets["STAGING_API_KEY"]
-PRODUCTION_API_KEY = st.secrets["PRODUCTION_API_KEY"]
+STAGING_API_KEY = "dotkey.m8sQPi2Qy5Q2bpmwgg_Gm.cPQDV1HQoFV7fWDE2SJpEp"
+PRODUCTION_API_KEY = "dotkey.07B-0lDHMLl-1gWaVcwGS.pt17cpqXQMuqQ9o9vwVvcH"
 
 # 📌 Configuración de la página
 st.set_page_config(page_title="Case Assignee Updater", page_icon="📂", layout="centered")
@@ -32,29 +32,26 @@ st.markdown('<p class="subtitle">Automatically assign cases to a selected user</
 use_production = st.toggle("🌍 Use Production Environment", value=False)
 API_KEY = PRODUCTION_API_KEY if use_production else STAGING_API_KEY
 
-# 📌 Validar la existencia de certi.pem en la misma carpeta
-current_dir = os.path.dirname(os.path.abspath(__file__))
-cert_path = "pages/certi.pem"
-
-if not os.path.isfile(cert_path):
-    st.error("❌ 'certi.pem' file not found in the project directory. Please ensure it's present.")
-    st.stop()
-
-# 📌 Obtener lista de usuarios (ID y email), usando la ruta absoluta del certificado
+# ✅ Solución alternativa: No usar verify personalizado y dejar que requests use su bundle por defecto
 def fetch_users():
     url = "https://api.dotfile.com/v1/users?page=1&limit=100"
     headers = {"accept": "application/json", "X-DOTFILE-API-KEY": API_KEY}
-    response = requests.get(url, headers=headers, verify=cert_path)
-    if response.status_code == 200:
+    try:
+        response = requests.get(url, headers=headers)
+        response.raise_for_status()
         data = response.json()["data"]
         return {user["email"]: user["id"] for user in data}
-    else:
+    except requests.exceptions.SSLError:
+        st.error("❌ SSL certificate error. Please ensure that your system certificates are up to date.")
+        return {}
+    except Exception as e:
+        st.error(f"❌ Failed to fetch users: {str(e)}")
         return {}
 
 users_dict = fetch_users()
 
-# 📌 Crear un contexto SSL válido con la ruta absoluta del certificado
-SSL_CONTEXT = ssl.create_default_context(cafile=cert_path)
+# 📌 Crear un contexto SSL genérico para aiohttp
+SSL_CONTEXT = ssl.create_default_context()
 
 # 📌 Función para actualizar el assignee_id de un `case_id`
 async def update_assignee_async(session, case_id, assignee_id):
@@ -115,4 +112,4 @@ if uploaded_file:
                     mime="text/csv"
                 )
         else:
-            st.error("❌ Unable to fetch users. Please check the API key, connection, or certi.pem file.")
+            st.error("❌ Unable to fetch users. Please check the API key or internet connection.")
