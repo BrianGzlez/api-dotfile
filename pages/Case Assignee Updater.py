@@ -8,7 +8,8 @@ import requests
 import os
 
 # 🔑 Claves API
-
+STAGING_API_KEY = st.secrets["STAGING_API_KEY"]
+PRODUCTION_API_KEY = st.secrets["PRODUCTION_API_KEY"]
 
 # 📌 Configuración de la página
 st.set_page_config(page_title="Case Assignee Updater", page_icon="📂", layout="centered")
