@@ -21,7 +21,7 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-st.markdown('<p class="title">🗑️ Check Terminator 9000</p>', unsafe_allow_html=True)
+st.markdown('<p class="title">🗑️ Check Terminator</p>', unsafe_allow_html=True)
 st.markdown('<p class="subtitle">Clean up checks from Dotfile with style</p>', unsafe_allow_html=True)
 
 use_production = st.toggle("🌍 Use Production Environment", value=False)
@@ -48,20 +48,20 @@ async def delete_check_async(session, check_id):
 async def process_deletions(df):
     async with aiohttp.ClientSession() as session:
         tasks = [
-            delete_check_async(session, row["id"])
+            delete_check_async(session, row["check_id"])
             for _, row in df.iterrows()
-            if pd.notna(row["id"])
+            if pd.notna(row["check_id"])
         ]
         results = await asyncio.gather(*tasks)
     return pd.DataFrame(results)
 
-uploaded_file = st.file_uploader("📤 Upload CSV with Check IDs", type=["csv"], help="Must contain a column named 'id' with UUIDs of the checks.")
+uploaded_file = st.file_uploader("📤 Upload CSV with Check IDs", type=["csv"], help="Must contain a column named 'check_id' with UUIDs of the checks.")
 
 if uploaded_file:
     df = pd.read_csv(uploaded_file)
 
-    if "id" not in df.columns:
-        st.error("⚠️ The uploaded file must contain a column named 'id'.")
+    if "check_id" not in df.columns:
+        st.error("⚠️ The uploaded file must contain a column named 'check_id'.")
     else:
         st.success(f"✅ File uploaded. {len(df)} checks to process.")
 
