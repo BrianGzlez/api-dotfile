@@ -68,9 +68,10 @@ st.markdown('<p class="subtitle">Efficiently manage case records and apply relev
 use_production = st.toggle("🌍 Switch to Production Mode", value=False)
 API_KEY = PRODUCTION_API_KEY if use_production else STAGING_API_KEY
 
+
 # 📌 Obtener etiquetas disponibles desde la API
 async def get_existing_tags():
-    url = "https://api.dotfile.com/v1/tags"
+    url = "https://api.dotfile.com/v1/tags?sort=created_at&page=1&limit=100"  # 👈 Aquí aumenté el limit a 100
     headers = {"accept": "application/json", "X-DOTFILE-API-KEY": API_KEY}
 
     async with aiohttp.ClientSession() as session:
@@ -80,6 +81,7 @@ async def get_existing_tags():
                 return {tag["label"] for tag in data["data"]}  # Retorna los tags válidos
             else:
                 return set()  # Si hay error, devuelve un conjunto vacío
+
 
 # 📌 Obtener las etiquetas antes de mostrar la UI
 existing_tags = asyncio.run(get_existing_tags())
