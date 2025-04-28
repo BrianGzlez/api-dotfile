@@ -75,18 +75,11 @@ async def update_case_status_async(session, case_id, selected_status):
         return {"Case ID": case_id, "Status": "❌ Failed", "Response": str(e)}
 
 
-# 📌 Función para ejecutar múltiples solicitudes en paralelo, pero con límite
+# 📌 Función para ejecutar múltiples solicitudes en paralelo
 async def process_cases(df, selected_status):
-    semaphore = asyncio.Semaphore(30)  # ⚡ máximo 5 requests al mismo tiempo
-
     async with aiohttp.ClientSession() as session:
-        async def sem_task(row):
-            async with semaphore:
-                return await update_case_status_async(session, row["case_id"], selected_status)
-
-        tasks = [sem_task(row) for _, row in df.iterrows() if pd.notna(row["case_id"])]
+        tasks = [update_case_status_async(session, row["case_id"], selected_status) for _, row in df.iterrows() if pd.notna(row["case_id"])]
         results = await asyncio.gather(*tasks)
-    
     return pd.DataFrame(results)
 
 
