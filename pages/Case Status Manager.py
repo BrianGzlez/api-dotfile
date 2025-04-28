@@ -74,12 +74,21 @@ async def update_case_status_async(session, case_id, selected_status):
     except Exception as e:
         return {"Case ID": case_id, "Status": "❌ Failed", "Response": str(e)}
 
-# 📌 Función para ejecutar múltiples solicitudes en paralelo
+
+# 📌 Función para ejecutar múltiples solicitudes en paralelo, pero con límite
 async def process_cases(df, selected_status):
+    semaphore = asyncio.Semaphore(30)  # ⚡ máximo 5 requests al mismo tiempo
+
     async with aiohttp.ClientSession() as session:
-        tasks = [update_case_status_async(session, row["case_id"], selected_status) for _, row in df.iterrows() if pd.notna(row["case_id"])]
+        async def sem_task(row):
+            async with semaphore:
+                return await update_case_status_async(session, row["case_id"], selected_status)
+
+        tasks = [sem_task(row) for _, row in df.iterrows() if pd.notna(row["case_id"])]
         results = await asyncio.gather(*tasks)
+    
     return pd.DataFrame(results)
+
 
 # 📌 Interfaz en Streamlit
 uploaded_file = st.file_uploader("📂 Upload Case Data", type=["csv"], help="Upload a CSV file containing a 'case_id' column.")
