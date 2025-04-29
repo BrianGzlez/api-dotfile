@@ -34,10 +34,11 @@ API_KEY = PRODUCTION_API_KEY if use_production else STAGING_API_KEY
 # 🔐 SSL
 SSL_CONTEXT = ssl.create_default_context()
 
-# 🔁 Control de concurrencia y reintentos
+# 🔁 Control de concurrencia
 semaphore = asyncio.Semaphore(5)  # máximo 5 tareas concurrentes
 
-async def delete_check_async(session, check_id, retries=3, delay=1):
+# 🔁 DELETE con hasta 5 intentos y backoff
+async def delete_check_async(session, check_id, retries=5, delay=1):
     url = f"https://api.dotfile.com/v1/checks/{check_id}"
     headers = {
         "X-DOTFILE-API-KEY": API_KEY
@@ -49,14 +50,18 @@ async def delete_check_async(session, check_id, retries=3, delay=1):
                 async with session.delete(url, headers=headers, ssl=SSL_CONTEXT) as response:
                     if response.status == 204:
                         return {"Check ID": check_id, "Status": "✅ Deleted", "Message": ""}
-                    elif response.status == 429 and attempt < retries - 1:
-                        await asyncio.sleep(delay * (2 ** attempt))  # Espera exponencial
+                    elif attempt < retries - 1:
+                        await asyncio.sleep(delay * (2 ** attempt))  # backoff exponencial
                     else:
                         text = await response.text()
                         return {"Check ID": check_id, "Status": f"❌ Error {response.status}", "Message": text}
             except Exception as e:
-                return {"Check ID": check_id, "Status": "❌ Failed", "Message": str(e)}
+                if attempt < retries - 1:
+                    await asyncio.sleep(delay * (2 ** attempt))
+                else:
+                    return {"Check ID": check_id, "Status": "❌ Failed", "Message": str(e)}
 
+# 🔄 Ejecutar todas las eliminaciones
 async def process_deletions(df):
     async with aiohttp.ClientSession() as session:
         tasks = [
