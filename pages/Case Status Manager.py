@@ -77,7 +77,7 @@ async def update_case_status_async(session, case_id, selected_status):
 
 # 📌 Función para ejecutar múltiples solicitudes en paralelo, pero con límite
 async def process_cases(df, selected_status):
-    semaphore = asyncio.Semaphore(5)  # ⚡ máximo 5 requests al mismo tiempo
+    semaphore = asyncio.Semaphore(15)  # ⚡ máximo 5 requests al mismo tiempo
 
     async with aiohttp.ClientSession() as session:
         async def sem_task(row):
