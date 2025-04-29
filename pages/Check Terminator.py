@@ -7,11 +7,14 @@ import ssl
 
 from datetime import datetime
 
+# 📌 Claves API
 STAGING_API_KEY = st.secrets["STAGING_API_KEY"]
 PRODUCTION_API_KEY = st.secrets["PRODUCTION_API_KEY"]
 
+# 📌 Configuración de la página
 st.set_page_config(page_title="Check Terminator 9000", page_icon="🗑️", layout="centered")
 
+# 📌 Estilos personalizados
 st.markdown("""
     <style>
         .title { text-align: center; font-size: 36px; font-weight: bold; color: #FFF; }
@@ -24,26 +27,35 @@ st.markdown("""
 st.markdown('<p class="title">🗑️ Check Terminator</p>', unsafe_allow_html=True)
 st.markdown('<p class="subtitle">Clean up checks from Dotfile with style</p>', unsafe_allow_html=True)
 
+# 🌍 Modo producción o staging
 use_production = st.toggle("🌍 Use Production Environment", value=False)
 API_KEY = PRODUCTION_API_KEY if use_production else STAGING_API_KEY
 
+# 🔐 SSL
 SSL_CONTEXT = ssl.create_default_context()
 
-async def delete_check_async(session, check_id):
+# 🔁 Control de concurrencia y reintentos
+semaphore = asyncio.Semaphore(5)  # máximo 5 tareas concurrentes
+
+async def delete_check_async(session, check_id, retries=3, delay=1):
     url = f"https://api.dotfile.com/v1/checks/{check_id}"
     headers = {
         "X-DOTFILE-API-KEY": API_KEY
     }
 
-    try:
-        async with session.delete(url, headers=headers, ssl=SSL_CONTEXT) as response:
-            if response.status == 204:
-                return {"Check ID": check_id, "Status": "✅ Deleted"}
-            else:
-                text = await response.text()
-                return {"Check ID": check_id, "Status": f"❌ Error {response.status}", "Message": text}
-    except Exception as e:
-        return {"Check ID": check_id, "Status": "❌ Failed", "Message": str(e)}
+    async with semaphore:
+        for attempt in range(retries):
+            try:
+                async with session.delete(url, headers=headers, ssl=SSL_CONTEXT) as response:
+                    if response.status == 204:
+                        return {"Check ID": check_id, "Status": "✅ Deleted", "Message": ""}
+                    elif response.status == 429 and attempt < retries - 1:
+                        await asyncio.sleep(delay * (2 ** attempt))  # Espera exponencial
+                    else:
+                        text = await response.text()
+                        return {"Check ID": check_id, "Status": f"❌ Error {response.status}", "Message": text}
+            except Exception as e:
+                return {"Check ID": check_id, "Status": "❌ Failed", "Message": str(e)}
 
 async def process_deletions(df):
     async with aiohttp.ClientSession() as session:
@@ -55,6 +67,7 @@ async def process_deletions(df):
         results = await asyncio.gather(*tasks)
     return pd.DataFrame(results)
 
+# 📤 Carga de archivo CSV
 uploaded_file = st.file_uploader("📤 Upload CSV with Check IDs", type=["csv"], help="Must contain a column named 'check_id' with UUIDs of the checks.")
 
 if uploaded_file:
