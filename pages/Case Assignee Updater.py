@@ -63,11 +63,26 @@ async def update_assignee_async(session, case_id, assignee_id):
     url_patch = f"https://api.dotfile.com/v1/cases/{case_id}"
     payload = {"assignee_id": assignee_id}
 
-    try:
-        async with session.patch(url_patch, json=payload, headers=headers, ssl=SSL_CONTEXT) as response:
-            return {"Case ID": case_id, "Status": "✅ Success" if response.status == 200 else f"❌ Error {response.status}"}
-    except Exception as e:
-        return {"Case ID": case_id, "Status": "❌ Failed", "Response": str(e)}
+    max_total_retries = 10  # Evita loops infinitos por seguridad
+    retries = 0
+
+    while True:
+        try:
+            async with session.patch(url_patch, json=payload, headers=headers, ssl=SSL_CONTEXT) as response:
+                status = response.status
+
+                if status == 200:
+                    return {"Case ID": case_id, "Status": "✅ Success"}
+                elif status == 429:
+                    retries += 1
+                    if retries >= max_total_retries:
+                        return {"Case ID": case_id, "Status": "❌ Too many retries (429)"}
+                    await asyncio.sleep(1)  # Espera antes de intentar de nuevo
+                else:
+                    return {"Case ID": case_id, "Status": f"❌ Error {status}"}
+        except Exception as e:
+            return {"Case ID": case_id, "Status": "❌ Failed", "Response": str(e)}
+
 
 # 📌 Función para procesar todos los cases en paralelo
 async def process_assignees(df, assignee_id):
