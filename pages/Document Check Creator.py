@@ -78,6 +78,7 @@ async def create_check(session, individual_id):
                 "parameters": { "model": "registration_certificate" }
             },
             "fraud_analysis": { "enabled": False }
+            "document_type_key": "proof_of_address"
         },
         "individual_id": individual_id
     }
