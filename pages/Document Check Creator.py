@@ -56,13 +56,13 @@ st.markdown("""
 
 # 📝 Title
 st.markdown('<p class="title">📝 Document Check Creator</p>', unsafe_allow_html=True)
-st.markdown('<p class="subtitle">Easily create Document Checks in bulk for multiple individuals using Dotfile\'s API.</p>', unsafe_allow_html=True)
+st.markdown('<p class="subtitle">Bulk-create Document Checks for individuals using Dotfile\'s API.</p>', unsafe_allow_html=True)
 
 # 🌐 Environment toggle
 use_production = st.toggle("🌍 Use Production Mode", value=False)
 API_KEY = PRODUCTION_API_KEY if use_production else STAGING_API_KEY
 
-# 📌 Create the check
+# 📌 Create check
 async def create_check(session, individual_id):
     url = "https://api.dotfile.com/v1/checks/document"
     headers = {
@@ -99,22 +99,21 @@ async def create_check(session, individual_id):
             "response": str(e)
         }
 
-# 📌 Bulk process all individuals
+# 📌 Process CSV
 async def process_checks(df):
     async with aiohttp.ClientSession() as session:
         tasks = [create_check(session, str(row["individual_id"]).strip()) for _, row in df.iterrows() if pd.notna(row["individual_id"])]
         results = await asyncio.gather(*tasks)
     return pd.DataFrame(results)
 
-# 📤 Upload file
-uploaded_file = st.file_uploader("📂 Upload Excel File", type=["xlsx"], help="Make sure it contains a column named 'individual_id'.")
+# 📤 Upload CSV
+uploaded_file = st.file_uploader("📂 Upload CSV File", type=["csv"], help="The CSV file must contain a column named 'individual_id'.")
 
 if uploaded_file:
     try:
-        df = pd.read_excel(uploaded_file)
-    except Exception as e:
-        st.error(f"⚠️ Error reading file: {e}")
-        st.stop()
+        df = pd.read_csv(uploaded_file, encoding="utf-8")
+    except UnicodeDecodeError:
+        df = pd.read_csv(uploaded_file, encoding="latin-1")
 
     if "individual_id" not in df.columns:
         st.error("❌ The file must contain a column named 'individual_id'.")
